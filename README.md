@@ -1,7 +1,6 @@
 # HSQE
 
 Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE), con almacenamiento en **SQLite** y exportación a **Excel**.
-Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE).
 
 ## Requisitos
 
@@ -19,7 +18,7 @@ pip install -r requirements.txt
 ## Ejecutar
 
 ```bash
-uvicorn app:app --reload
+uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 La API quedará disponible en:
