@@ -1,5 +1,6 @@
 # HSQE
 
+Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE), con almacenamiento en **SQLite** y exportación a **Excel**.
 Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE).
 
 ## Requisitos
@@ -26,6 +27,11 @@ La API quedará disponible en:
 - `http://127.0.0.1:8000`
 - Documentación Swagger: `http://127.0.0.1:8000/docs`
 
+## Persistencia
+
+- La base de datos se guarda en `incidentes.db` (SQLite).
+- La tabla `incidentes` se crea automáticamente al iniciar el servicio.
+
 ## Endpoints principales
 
 - `POST /incidentes`: registrar incidente
@@ -33,6 +39,7 @@ La API quedará disponible en:
 - `GET /incidentes/{incidente_id}`: obtener detalle
 - `PATCH /incidentes/{incidente_id}`: actualizar parcialmente
 - `DELETE /incidentes/{incidente_id}`: eliminar incidente
+- `GET /incidentes/exportar.xlsx`: exportar incidentes a Excel (acepta filtros `severidad` y `area`)
 
 ## Ejemplo de payload
 
