@@ -1,6 +1,7 @@
 # HSQE
 
 Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE), con almacenamiento en **SQLite** y exportación a **Excel**.
+Aplicación **FastAPI** para registrar incidentes de Seguridad, Salud, Calidad y Medio Ambiente (HSQE).
 
 ## Requisitos
 

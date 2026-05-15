@@ -16,6 +16,16 @@ app = FastAPI(
     title="HSQE Incident API",
     description="API para registrar, consultar y exportar incidentes HSQE.",
     version="2.0.0",
+from typing import List, Optional
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+
+app = FastAPI(
+    title="HSQE Incident API",
+    description="API para registrar y consultar incidentes HSQE.",
+    version="1.0.0",
 )
 
 
@@ -90,11 +100,14 @@ def row_to_incident(row: sqlite3.Row) -> Incident:
         acciones_inmediatas=row["acciones_inmediatas"],
         creado_en=datetime.fromisoformat(row["creado_en"]),
     )
+incidentes: List[Incident] = []
+next_id = 1
 
 
 @app.get("/", tags=["salud"])
 def healthcheck() -> dict:
     return {"status": "ok", "service": "HSQE Incident API", "storage": "sqlite"}
+    return {"status": "ok", "service": "HSQE Incident API"}
 
 
 @app.post("/incidentes", response_model=Incident, status_code=201, tags=["incidentes"])
@@ -126,6 +139,12 @@ def crear_incidente(payload: IncidentCreate) -> Incident:
         raise HTTPException(status_code=500, detail="No fue posible crear el incidente")
 
     return row_to_incident(row)
+    global next_id
+
+    incidente = Incident(id=next_id, creado_en=datetime.utcnow(), **payload.model_dump())
+    incidentes.append(incidente)
+    next_id += 1
+    return incidente
 
 
 @app.get("/incidentes", response_model=List[Incident], tags=["incidentes"])
@@ -150,6 +169,16 @@ def listar_incidentes(
         rows = conn.execute(query, params).fetchall()
 
     return [row_to_incident(row) for row in rows]
+    resultados = incidentes
+
+    if severidad is not None:
+        resultados = [i for i in resultados if i.severidad == severidad]
+
+    if area is not None:
+        area_lower = area.lower().strip()
+        resultados = [i for i in resultados if area_lower in i.area.lower()]
+
+    return resultados
 
 
 @app.get("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
@@ -161,6 +190,11 @@ def obtener_incidente(incidente_id: int) -> Incident:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
 
     return row_to_incident(row)
+    for incidente in incidentes:
+        if incidente.id == incidente_id:
+            return incidente
+
+    raise HTTPException(status_code=404, detail="Incidente no encontrado")
 
 
 @app.patch("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
@@ -199,6 +233,14 @@ def actualizar_incidente(incidente_id: int, payload: IncidentUpdate) -> Incident
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
 
     return row_to_incident(row)
+    for index, incidente in enumerate(incidentes):
+        if incidente.id == incidente_id:
+            update_data = payload.model_dump(exclude_unset=True)
+            incidente_actualizado = incidente.model_copy(update=update_data)
+            incidentes[index] = incidente_actualizado
+            return incidente_actualizado
+
+    raise HTTPException(status_code=404, detail="Incidente no encontrado")
 
 
 @app.delete("/incidentes/{incidente_id}", status_code=204, tags=["incidentes"])
@@ -260,3 +302,9 @@ def exportar_incidentes_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+    for index, incidente in enumerate(incidentes):
+        if incidente.id == incidente_id:
+            incidentes.pop(index)
+            return
+
+    raise HTTPException(status_code=404, detail="Incidente no encontrado")
