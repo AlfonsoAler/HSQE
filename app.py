@@ -5,7 +5,7 @@ import sqlite3
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from openpyxl import Workbook
 from pydantic import BaseModel, Field
 
@@ -95,6 +95,11 @@ def row_to_incident(row: sqlite3.Row) -> Incident:
 @app.get("/", tags=["salud"])
 def healthcheck() -> dict:
     return {"status": "ok", "service": "HSQE Incident API", "storage": "sqlite"}
+
+
+@app.get("/ui", response_class=HTMLResponse, tags=["frontend"])
+def frontend() -> str:
+    return open("templates/index.html", encoding="utf-8").read()
 
 
 @app.post("/incidentes", response_model=Incident, status_code=201, tags=["incidentes"])

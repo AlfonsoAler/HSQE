@@ -25,6 +25,7 @@ La API quedará disponible en:
 
 - `http://127.0.0.1:8000`
 - Documentación Swagger: `http://127.0.0.1:8000/docs`
+- Frontend HTML (Bootstrap): `http://127.0.0.1:8000/ui`
 
 ## Persistencia
 

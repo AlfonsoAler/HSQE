@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSQE Incidentes</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Gestión de Incidentes HSQE</h1>
+        <a class="btn btn-success" href="/incidentes/exportar.xlsx">Exportar Excel</a>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">Registrar incidente</div>
+        <div class="card-body">
+          <form id="incidentForm" class="row g-3">
+            <div class="col-md-6"><input class="form-control" name="area" placeholder="Área" required /></div>
+            <div class="col-md-6"><input class="form-control" name="reportado_por" placeholder="Reportado por" required /></div>
+            <div class="col-12"><textarea class="form-control" name="descripcion" placeholder="Descripción" rows="2" required></textarea></div>
+            <div class="col-md-4">
+              <select class="form-select" name="severidad" required>
+                <option value="">Severidad</option>
+                <option>baja</option><option>media</option><option>alta</option><option>critica</option>
+              </select>
+            </div>
+            <div class="col-md-4"><input class="form-control" type="datetime-local" name="fecha_incidente" required /></div>
+            <div class="col-md-4"><input class="form-control" name="acciones_inmediatas" placeholder="Acciones inmediatas (opcional)" /></div>
+            <div class="col-12 d-flex gap-2">
+              <button class="btn btn-primary" type="submit">Guardar</button>
+              <button class="btn btn-outline-secondary" type="button" id="refreshBtn">Actualizar lista</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Incidentes</div>
+        <div class="table-responsive">
+          <table class="table table-striped mb-0" id="incidentsTable">
+            <thead>
+              <tr><th>ID</th><th>Área</th><th>Descripción</th><th>Severidad</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tbody = document.querySelector('#incidentsTable tbody');
+      const form = document.getElementById('incidentForm');
+      const refreshBtn = document.getElementById('refreshBtn');
+
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+      async function loadIncidents() {
+        const res = await fetch('/incidentes');
+        const data = await res.json();
+        tbody.innerHTML = data.map((i) => `
+          <tr>
+            <td>${i.id}</td>
+            <td>${esc(i.area)}</td>
+            <td>${esc(i.descripcion)}</td>
+            <td><span class="badge text-bg-secondary">${esc(i.severidad)}</span></td>
+            <td>${esc(i.reportado_por)}</td>
+            <td>${new Date(i.fecha_incidente).toLocaleString()}</td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeIncident(${i.id})">Eliminar</button></td>
+          </tr>`).join('');
+      }
+
+      async function removeIncident(id) {
+        await fetch(`/incidentes/${id}`, { method: 'DELETE' });
+        await loadIncidents();
+      }
+      window.removeIncident = removeIncident;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = Object.fromEntries(fd.entries());
+        if (!payload.acciones_inmediatas) delete payload.acciones_inmediatas;
+        payload.fecha_incidente = new Date(payload.fecha_incidente).toISOString();
+
+        const res = await fetch('/incidentes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert(`Error: ${JSON.stringify(err.detail)}`);
+          return;
+        }
+
+        form.reset();
+        await loadIncidents();
+      });
+
+      refreshBtn.addEventListener('click', loadIncidents);
+      loadIncidents();
+    </script>
+  </body>
+</html>
