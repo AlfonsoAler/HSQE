@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from io import BytesIO
 import sqlite3
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -16,16 +16,6 @@ app = FastAPI(
     title="HSQE Incident API",
     description="API para registrar, consultar y exportar incidentes HSQE.",
     version="2.0.0",
-from typing import List, Optional
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
-
-app = FastAPI(
-    title="HSQE Incident API",
-    description="API para registrar y consultar incidentes HSQE.",
-    version="1.0.0",
 )
 
 
@@ -100,14 +90,11 @@ def row_to_incident(row: sqlite3.Row) -> Incident:
         acciones_inmediatas=row["acciones_inmediatas"],
         creado_en=datetime.fromisoformat(row["creado_en"]),
     )
-incidentes: List[Incident] = []
-next_id = 1
 
 
 @app.get("/", tags=["salud"])
 def healthcheck() -> dict:
     return {"status": "ok", "service": "HSQE Incident API", "storage": "sqlite"}
-    return {"status": "ok", "service": "HSQE Incident API"}
 
 
 @app.post("/incidentes", response_model=Incident, status_code=201, tags=["incidentes"])
@@ -139,19 +126,13 @@ def crear_incidente(payload: IncidentCreate) -> Incident:
         raise HTTPException(status_code=500, detail="No fue posible crear el incidente")
 
     return row_to_incident(row)
-    global next_id
-
-    incidente = Incident(id=next_id, creado_en=datetime.utcnow(), **payload.model_dump())
-    incidentes.append(incidente)
-    next_id += 1
-    return incidente
 
 
-@app.get("/incidentes", response_model=List[Incident], tags=["incidentes"])
+@app.get("/incidentes", response_model=list[Incident], tags=["incidentes"])
 def listar_incidentes(
     severidad: Optional[Severity] = None,
     area: Optional[str] = None,
-) -> List[Incident]:
+) -> list[Incident]:
     query = "SELECT * FROM incidentes WHERE 1=1"
     params: list[str] = []
 
@@ -169,88 +150,6 @@ def listar_incidentes(
         rows = conn.execute(query, params).fetchall()
 
     return [row_to_incident(row) for row in rows]
-    resultados = incidentes
-
-    if severidad is not None:
-        resultados = [i for i in resultados if i.severidad == severidad]
-
-    if area is not None:
-        area_lower = area.lower().strip()
-        resultados = [i for i in resultados if area_lower in i.area.lower()]
-
-    return resultados
-
-
-@app.get("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
-def obtener_incidente(incidente_id: int) -> Incident:
-    with get_connection() as conn:
-        row = conn.execute("SELECT * FROM incidentes WHERE id = ?", (incidente_id,)).fetchone()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Incidente no encontrado")
-
-    return row_to_incident(row)
-    for incidente in incidentes:
-        if incidente.id == incidente_id:
-            return incidente
-
-    raise HTTPException(status_code=404, detail="Incidente no encontrado")
-
-
-@app.patch("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
-def actualizar_incidente(incidente_id: int, payload: IncidentUpdate) -> Incident:
-    update_data = payload.model_dump(exclude_unset=True)
-
-    if not update_data:
-        return obtener_incidente(incidente_id)
-
-    fields = []
-    values = []
-
-    for key, value in update_data.items():
-        if key == "severidad" and value is not None:
-            value = value.value
-        if isinstance(value, datetime):
-            value = value.isoformat()
-        fields.append(f"{key} = ?")
-        values.append(value)
-
-    values.append(incidente_id)
-
-    with get_connection() as conn:
-        result = conn.execute(
-            f"UPDATE incidentes SET {', '.join(fields)} WHERE id = ?",
-            values,
-        )
-        conn.commit()
-
-        if result.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Incidente no encontrado")
-
-        row = conn.execute("SELECT * FROM incidentes WHERE id = ?", (incidente_id,)).fetchone()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Incidente no encontrado")
-
-    return row_to_incident(row)
-    for index, incidente in enumerate(incidentes):
-        if incidente.id == incidente_id:
-            update_data = payload.model_dump(exclude_unset=True)
-            incidente_actualizado = incidente.model_copy(update=update_data)
-            incidentes[index] = incidente_actualizado
-            return incidente_actualizado
-
-    raise HTTPException(status_code=404, detail="Incidente no encontrado")
-
-
-@app.delete("/incidentes/{incidente_id}", status_code=204, tags=["incidentes"])
-def eliminar_incidente(incidente_id: int) -> None:
-    with get_connection() as conn:
-        result = conn.execute("DELETE FROM incidentes WHERE id = ?", (incidente_id,))
-        conn.commit()
-
-    if result.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Incidente no encontrado")
 
 
 @app.get("/incidentes/exportar.xlsx", tags=["incidentes"])
@@ -302,9 +201,73 @@ def exportar_incidentes_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
-    for index, incidente in enumerate(incidentes):
-        if incidente.id == incidente_id:
-            incidentes.pop(index)
-            return
 
-    raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+@app.get("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
+def obtener_incidente(incidente_id: int) -> Incident:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM incidentes WHERE id = ?", (incidente_id,)).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+    return row_to_incident(row)
+
+
+@app.patch("/incidentes/{incidente_id}", response_model=Incident, tags=["incidentes"])
+def actualizar_incidente(incidente_id: int, payload: IncidentUpdate) -> Incident:
+    nullable_fields = {"acciones_inmediatas"}
+    null_disallowed_fields = [
+        field_name
+        for field_name in payload.model_fields_set
+        if field_name not in nullable_fields and getattr(payload, field_name) is None
+    ]
+    if null_disallowed_fields:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Los campos {', '.join(null_disallowed_fields)} no permiten null.",
+        )
+
+    update_data = payload.model_dump(exclude_unset=True, exclude_none=True)
+    if not update_data:
+        return obtener_incidente(incidente_id)
+
+    fields = []
+    values = []
+
+    for key, value in update_data.items():
+        if key == "severidad":
+            value = value.value
+        if isinstance(value, datetime):
+            value = value.isoformat()
+        fields.append(f"{key} = ?")
+        values.append(value)
+
+    values.append(incidente_id)
+
+    with get_connection() as conn:
+        result = conn.execute(
+            f"UPDATE incidentes SET {', '.join(fields)} WHERE id = ?",
+            values,
+        )
+        conn.commit()
+
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+        row = conn.execute("SELECT * FROM incidentes WHERE id = ?", (incidente_id,)).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+    return row_to_incident(row)
+
+
+@app.delete("/incidentes/{incidente_id}", status_code=204, tags=["incidentes"])
+def eliminar_incidente(incidente_id: int) -> None:
+    with get_connection() as conn:
+        result = conn.execute("DELETE FROM incidentes WHERE id = ?", (incidente_id,))
+        conn.commit()
+
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
