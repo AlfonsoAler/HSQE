@@ -4,96 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HSQE Incidentes</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   </head>
   <body class="bg-light">
     <div class="container-fluid container-lg py-4">
-      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
-        <h1 class="h3 mb-0">Gestión de Incidentes HSQE</h1>
-        <a class="btn btn-success" id="exportBtn" href="/incidentes/exportar.xlsx">Exportar Excel</a>
-      </div>
+      <h1 class="h3 mb-3">Gestión de Incidentes HSQE</h1>
 
-      <div class="card mb-4">
-        <div class="card-header">Registrar incidente</div>
+      <div class="alert alert-info">Usuario demo: <strong>admin</strong> / Contraseña: <strong>admin123</strong></div>
+
+      <div class="card mb-4" id="loginCard">
+        <div class="card-header">Iniciar sesión</div>
         <div class="card-body">
-          <form id="incidentForm" class="row g-3">
-            <div class="col-12 col-md-6">
-              <input class="form-control" name="area" placeholder="Área" required />
-            </div>
-            <div class="col-12 col-md-6">
-              <input class="form-control" name="reportado_por" placeholder="Reportado por" required />
-            </div>
-            <div class="col-12">
-              <textarea class="form-control" name="descripcion" placeholder="Descripción" rows="2" required></textarea>
-            </div>
-            <div class="col-12 col-md-4">
-              <select class="form-select" name="severidad" required>
-                <option value="">Severidad</option>
-                <option value="baja">baja</option>
-                <option value="media">media</option>
-                <option value="alta">alta</option>
-                <option value="critica">critica</option>
-              </select>
-            </div>
-            <div class="col-12 col-md-4">
-              <input class="form-control" type="datetime-local" name="fecha_incidente" required />
-            </div>
-            <div class="col-12 col-md-4">
-              <input class="form-control" name="acciones_inmediatas" placeholder="Acciones inmediatas (opcional)" />
-            </div>
-            <div class="col-12 d-flex flex-wrap gap-2">
-              <button class="btn btn-primary" type="submit">Guardar</button>
-              <button class="btn btn-outline-secondary" type="button" id="refreshBtn">Actualizar lista</button>
-            </div>
+          <form id="loginForm" class="row g-3">
+            <div class="col-12 col-md-5"><input class="form-control" name="username" placeholder="Usuario" required /></div>
+            <div class="col-12 col-md-5"><input class="form-control" type="password" name="password" placeholder="Contraseña" required /></div>
+            <div class="col-12 col-md-2 d-grid"><button class="btn btn-primary" type="submit">Entrar</button></div>
           </form>
         </div>
       </div>
 
-      <div class="card mb-3">
-        <div class="card-header">Filtros</div>
-        <div class="card-body">
-          <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-4">
-              <label for="filterSeverity" class="form-label">Severidad</label>
-              <select class="form-select" id="filterSeverity">
-                <option value="">Todas</option>
-                <option value="baja">baja</option>
-                <option value="media">media</option>
-                <option value="alta">alta</option>
-                <option value="critica">critica</option>
-              </select>
-            </div>
-            <div class="col-12 col-md-5">
-              <label for="filterArea" class="form-label">Área</label>
-              <input id="filterArea" class="form-control" placeholder="Buscar por área" />
-            </div>
-            <div class="col-12 col-md-3 d-flex gap-2">
-              <button class="btn btn-outline-primary w-100" id="applyFiltersBtn" type="button">Aplicar</button>
-              <button class="btn btn-outline-dark w-100" id="clearFiltersBtn" type="button">Limpiar</button>
-            </div>
+      <div id="appSection" class="d-none">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+          <div><span id="welcomeUser" class="badge text-bg-dark"></span></div>
+          <div class="d-flex gap-2">
+            <a class="btn btn-success" id="exportBtn" href="#">Exportar Excel</a>
+            <button class="btn btn-outline-danger" id="logoutBtn" type="button">Salir</button>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div class="card-header">Incidentes</div>
-        <div class="table-responsive">
-          <table class="table table-striped mb-0" id="incidentsTable">
-            <thead>
-              <tr>
-                <th>ID</th><th>Área</th><th>Descripción</th><th>Severidad</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="card mb-4"><div class="card-header">Registrar incidente</div><div class="card-body">
+          <form id="incidentForm" class="row g-3">
+            <div class="col-12 col-md-6"><input class="form-control" name="area" placeholder="Área" required /></div>
+            <div class="col-12 col-md-6"><input class="form-control" name="reportado_por" placeholder="Reportado por" required /></div>
+            <div class="col-12"><textarea class="form-control" name="descripcion" placeholder="Descripción" rows="2" required></textarea></div>
+            <div class="col-12 col-md-4"><select class="form-select" name="severidad" required><option value="">Severidad</option><option value="baja">baja</option><option value="media">media</option><option value="alta">alta</option><option value="critica">critica</option></select></div>
+            <div class="col-12 col-md-4"><input class="form-control" type="datetime-local" name="fecha_incidente" required /></div>
+            <div class="col-12 col-md-4"><input class="form-control" name="acciones_inmediatas" placeholder="Acciones inmediatas (opcional)" /></div>
+            <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Guardar</button><button class="btn btn-outline-secondary" type="button" id="refreshBtn">Actualizar lista</button></div>
+          </form>
+        </div></div>
+
+        <div class="card mb-3"><div class="card-header">Filtros</div><div class="card-body"><div class="row g-3 align-items-end">
+          <div class="col-12 col-md-4"><label for="filterSeverity" class="form-label">Severidad</label><select class="form-select" id="filterSeverity"><option value="">Todas</option><option value="baja">baja</option><option value="media">media</option><option value="alta">alta</option><option value="critica">critica</option></select></div>
+          <div class="col-12 col-md-5"><label for="filterArea" class="form-label">Área</label><input id="filterArea" class="form-control" placeholder="Buscar por área" /></div>
+          <div class="col-12 col-md-3 d-flex gap-2"><button class="btn btn-outline-primary w-100" id="applyFiltersBtn" type="button">Aplicar</button><button class="btn btn-outline-dark w-100" id="clearFiltersBtn" type="button">Limpiar</button></div>
+        </div></div></div>
+
+        <div class="card"><div class="card-header">Incidentes</div><div class="table-responsive"><table class="table table-striped mb-0" id="incidentsTable"><thead><tr><th>ID</th><th>Área</th><th>Descripción</th><th>Severidad</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
       </div>
     </div>
 
     <script>
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+      const tokenKey = 'hsqe_token';
+      const loginForm = document.getElementById('loginForm');
+      const loginCard = document.getElementById('loginCard');
+      const appSection = document.getElementById('appSection');
+      const welcomeUser = document.getElementById('welcomeUser');
+      const logoutBtn = document.getElementById('logoutBtn');
       const tbody = document.querySelector('#incidentsTable tbody');
       const form = document.getElementById('incidentForm');
       const refreshBtn = document.getElementById('refreshBtn');
@@ -103,7 +71,20 @@
       const applyFiltersBtn = document.getElementById('applyFiltersBtn');
       const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+      function getToken() { return localStorage.getItem(tokenKey); }
+      function setToken(token) { localStorage.setItem(tokenKey, token); }
+      function clearToken() { localStorage.removeItem(tokenKey); }
+      function authHeaders() { const token = getToken(); return token ? { Authorization: `Bearer ${token}` } : {}; }
+
+      async function api(url, options = {}) {
+        const headers = { ...(options.headers || {}), ...authHeaders() };
+        const res = await fetch(url, { ...options, headers });
+        if (res.status === 401) { clearToken(); showLogin(); throw new Error('No autenticado'); }
+        return res;
+      }
+
+      function showLogin() { loginCard.classList.remove('d-none'); appSection.classList.add('d-none'); }
+      function showApp() { loginCard.classList.add('d-none'); appSection.classList.remove('d-none'); }
 
       function buildQueryParams() {
         const params = new URLSearchParams();
@@ -117,68 +98,60 @@
         exportBtn.href = params.toString() ? `/incidentes/exportar.xlsx?${params.toString()}` : '/incidentes/exportar.xlsx';
       }
 
+      async function loadMe() {
+        const res = await api('/auth/me');
+        const me = await res.json();
+        welcomeUser.textContent = `Usuario: ${me.username}`;
+      }
+
       async function loadIncidents() {
         const params = buildQueryParams();
         syncExportLink();
         const url = params.toString() ? `/incidentes?${params.toString()}` : '/incidentes';
-
-        const res = await fetch(url);
+        const res = await api(url);
         const data = await res.json();
-
-        tbody.innerHTML = data.map((i) => `
-          <tr>
-            <td>${i.id}</td>
-            <td>${esc(i.area)}</td>
-            <td>${esc(i.descripcion)}</td>
-            <td><span class="badge text-bg-secondary">${esc(i.severidad)}</span></td>
-            <td>${esc(i.reportado_por)}</td>
-            <td>${new Date(i.fecha_incidente).toLocaleString()}</td>
-            <td><button class="btn btn-sm btn-outline-danger" onclick="removeIncident(${i.id})">Eliminar</button></td>
-          </tr>`).join('');
+        tbody.innerHTML = data.map((i) => `<tr><td>${i.id}</td><td>${esc(i.area)}</td><td>${esc(i.descripcion)}</td><td><span class="badge text-bg-secondary">${esc(i.severidad)}</span></td><td>${esc(i.reportado_por)}</td><td>${new Date(i.fecha_incidente).toLocaleString()}</td><td><button class="btn btn-sm btn-outline-danger" onclick="removeIncident(${i.id})">Eliminar</button></td></tr>`).join('');
       }
 
-      async function removeIncident(id) {
-        await fetch(`/incidentes/${id}`, { method: 'DELETE' });
-        await loadIncidents();
-      }
+      async function removeIncident(id) { await api(`/incidentes/${id}`, { method: 'DELETE' }); await loadIncidents(); }
       window.removeIncident = removeIncident;
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(loginForm);
+        const payload = Object.fromEntries(fd.entries());
+        const res = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) { alert('Credenciales inválidas'); return; }
+        const data = await res.json();
+        setToken(data.token);
+        showApp();
+        await loadMe();
+        await loadIncidents();
+      });
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(form);
         const payload = Object.fromEntries(fd.entries());
-
         if (!payload.acciones_inmediatas) delete payload.acciones_inmediatas;
         payload.fecha_incidente = new Date(payload.fecha_incidente).toISOString();
-
-        const res = await fetch('/incidentes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          alert(`Error: ${JSON.stringify(err.detail)}`);
-          return;
-        }
-
+        const res = await api('/incidentes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) { const err = await res.json(); alert(`Error: ${JSON.stringify(err.detail)}`); return; }
         form.reset();
         await loadIncidents();
       });
 
+      logoutBtn.addEventListener('click', () => { clearToken(); showLogin(); });
       refreshBtn.addEventListener('click', loadIncidents);
       applyFiltersBtn.addEventListener('click', loadIncidents);
-      clearFiltersBtn.addEventListener('click', () => {
-        filterSeverity.value = '';
-        filterArea.value = '';
-        loadIncidents();
-      });
-
+      clearFiltersBtn.addEventListener('click', () => { filterSeverity.value = ''; filterArea.value = ''; loadIncidents(); });
       filterSeverity.addEventListener('change', syncExportLink);
       filterArea.addEventListener('input', syncExportLink);
 
-      loadIncidents();
+      (async () => {
+        if (!getToken()) { showLogin(); return; }
+        try { showApp(); await loadMe(); await loadIncidents(); } catch { showLogin(); }
+      })();
     </script>
   </body>
 </html>
