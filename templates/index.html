@@ -10,32 +10,71 @@
     />
   </head>
   <body class="bg-light">
-    <div class="container py-4">
-      <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="container-fluid container-lg py-4">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
         <h1 class="h3 mb-0">Gestión de Incidentes HSQE</h1>
-        <a class="btn btn-success" href="/incidentes/exportar.xlsx">Exportar Excel</a>
+        <a class="btn btn-success" id="exportBtn" href="/incidentes/exportar.xlsx">Exportar Excel</a>
       </div>
 
       <div class="card mb-4">
         <div class="card-header">Registrar incidente</div>
         <div class="card-body">
           <form id="incidentForm" class="row g-3">
-            <div class="col-md-6"><input class="form-control" name="area" placeholder="Área" required /></div>
-            <div class="col-md-6"><input class="form-control" name="reportado_por" placeholder="Reportado por" required /></div>
-            <div class="col-12"><textarea class="form-control" name="descripcion" placeholder="Descripción" rows="2" required></textarea></div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-6">
+              <input class="form-control" name="area" placeholder="Área" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <input class="form-control" name="reportado_por" placeholder="Reportado por" required />
+            </div>
+            <div class="col-12">
+              <textarea class="form-control" name="descripcion" placeholder="Descripción" rows="2" required></textarea>
+            </div>
+            <div class="col-12 col-md-4">
               <select class="form-select" name="severidad" required>
                 <option value="">Severidad</option>
-                <option>baja</option><option>media</option><option>alta</option><option>critica</option>
+                <option value="baja">baja</option>
+                <option value="media">media</option>
+                <option value="alta">alta</option>
+                <option value="critica">critica</option>
               </select>
             </div>
-            <div class="col-md-4"><input class="form-control" type="datetime-local" name="fecha_incidente" required /></div>
-            <div class="col-md-4"><input class="form-control" name="acciones_inmediatas" placeholder="Acciones inmediatas (opcional)" /></div>
-            <div class="col-12 d-flex gap-2">
+            <div class="col-12 col-md-4">
+              <input class="form-control" type="datetime-local" name="fecha_incidente" required />
+            </div>
+            <div class="col-12 col-md-4">
+              <input class="form-control" name="acciones_inmediatas" placeholder="Acciones inmediatas (opcional)" />
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
               <button class="btn btn-primary" type="submit">Guardar</button>
               <button class="btn btn-outline-secondary" type="button" id="refreshBtn">Actualizar lista</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Filtros</div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label for="filterSeverity" class="form-label">Severidad</label>
+              <select class="form-select" id="filterSeverity">
+                <option value="">Todas</option>
+                <option value="baja">baja</option>
+                <option value="media">media</option>
+                <option value="alta">alta</option>
+                <option value="critica">critica</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-5">
+              <label for="filterArea" class="form-label">Área</label>
+              <input id="filterArea" class="form-control" placeholder="Buscar por área" />
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+              <button class="btn btn-outline-primary w-100" id="applyFiltersBtn" type="button">Aplicar</button>
+              <button class="btn btn-outline-dark w-100" id="clearFiltersBtn" type="button">Limpiar</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -44,7 +83,9 @@
         <div class="table-responsive">
           <table class="table table-striped mb-0" id="incidentsTable">
             <thead>
-              <tr><th>ID</th><th>Área</th><th>Descripción</th><th>Severidad</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th></tr>
+              <tr>
+                <th>ID</th><th>Área</th><th>Descripción</th><th>Severidad</th><th>Reportado por</th><th>Fecha</th><th>Acciones</th>
+              </tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -56,12 +97,34 @@
       const tbody = document.querySelector('#incidentsTable tbody');
       const form = document.getElementById('incidentForm');
       const refreshBtn = document.getElementById('refreshBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const filterSeverity = document.getElementById('filterSeverity');
+      const filterArea = document.getElementById('filterArea');
+      const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+      const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+
+      function buildQueryParams() {
+        const params = new URLSearchParams();
+        if (filterSeverity.value) params.set('severidad', filterSeverity.value);
+        if (filterArea.value.trim()) params.set('area', filterArea.value.trim());
+        return params;
+      }
+
+      function syncExportLink() {
+        const params = buildQueryParams();
+        exportBtn.href = params.toString() ? `/incidentes/exportar.xlsx?${params.toString()}` : '/incidentes/exportar.xlsx';
+      }
 
       async function loadIncidents() {
-        const res = await fetch('/incidentes');
+        const params = buildQueryParams();
+        syncExportLink();
+        const url = params.toString() ? `/incidentes?${params.toString()}` : '/incidentes';
+
+        const res = await fetch(url);
         const data = await res.json();
+
         tbody.innerHTML = data.map((i) => `
           <tr>
             <td>${i.id}</td>
@@ -84,6 +147,7 @@
         e.preventDefault();
         const fd = new FormData(form);
         const payload = Object.fromEntries(fd.entries());
+
         if (!payload.acciones_inmediatas) delete payload.acciones_inmediatas;
         payload.fecha_incidente = new Date(payload.fecha_incidente).toISOString();
 
@@ -104,6 +168,16 @@
       });
 
       refreshBtn.addEventListener('click', loadIncidents);
+      applyFiltersBtn.addEventListener('click', loadIncidents);
+      clearFiltersBtn.addEventListener('click', () => {
+        filterSeverity.value = '';
+        filterArea.value = '';
+        loadIncidents();
+      });
+
+      filterSeverity.addEventListener('change', syncExportLink);
+      filterArea.addEventListener('input', syncExportLink);
+
       loadIncidents();
     </script>
   </body>
